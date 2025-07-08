@@ -14,12 +14,12 @@ SDL_Renderer* ren;
 #define MAP_HEIGHT 8
 int map[MAP_HEIGHT][MAP_WIDTH] = {
 	{1,1,1,1,1,1,1,1},
-	{1,0,1,0,0,0,0,1},
-	{1,0,0,1,0,0,0,1},
-	{1,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,1},
-	{1,0,0,0,1,1,0,1},
-	{1,0,0,0,0,0,0,1},
+	{1,0,0,0,0,1,0,1},
+	{1,0,1,0,0,1,0,1},
+	{1,0,0,0,0,1,0,1},
+	{1,0,0,0,0,1,0,1},
+	{1,0,1,1,0,0,0,1},
+	{1,0,0,0,1,0,0,1},
 	{1,1,1,1,1,1,1,1}
 };
 
@@ -28,7 +28,7 @@ typedef struct {
 } player_t;
 
 player_t p = {
-	0, 0, 0
+	4, 4, 0
 };
 
 void drawMap2D() {
@@ -62,8 +62,8 @@ float castRay(float a) {
 
 void drawLine(int i, int h, int w) {
 	for (int j = 0; j < h; j++) {
-		float y = floor(300 - h / 2 + j);
-		SDL_SetRenderDrawColor(ren, h/2, h/2, h/2, 255);
+		float y = floor(250 - h / 2 + j);
+		SDL_SetRenderDrawColor(ren, 0, h/2, h/2, 255);
 		SDL_FRect r = (SDL_FRect){i * w, y, w, 1};
 		SDL_RenderFillRect(ren, &r);
 	}
@@ -77,7 +77,7 @@ void rayCast() {
 	for (int i = 0; i < rays; i++) {
 		float angle = p.r - (FOV/2) + i * step;
 		float dist = castRay(angle);
-		float wh = 1200/dist;
+		float wh = 200/dist;
 		drawLine(i, wh, sliceWidth);
 	}
 }
@@ -109,18 +109,18 @@ int main() {
 		}
 		
 		if (keys[SDL_SCANCODE_W])
-			p.y -= 0.02 * dt;
+			p.y -= 0.004 * dt;
 		if (keys[SDL_SCANCODE_S])
-			p.y += 0.02 * dt;
+			p.y += 0.004 * dt;
 		if (keys[SDL_SCANCODE_A])
-			p.x -= 0.02 * dt;
+			p.x -= 0.004 * dt;
 		if (keys[SDL_SCANCODE_D])
-			p.x += 0.02 * dt;
+			p.x += 0.004 * dt;
 		
 		if (keys[SDL_SCANCODE_Q])
-			p.r -= 0.01 * dt;
+			p.r -= 0.002 * dt;
 		if (keys[SDL_SCANCODE_E])
-			p.r += 0.01 * dt;
+			p.r += 0.002 * dt;
 		
 		if (keys[SDL_SCANCODE_M])
 			drawMap2D();
