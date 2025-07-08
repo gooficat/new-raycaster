@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #define WIDTH 800
-#define HEIGHT 600
+#define HEIGHT 400
 
 bool keys[512];
 SDL_Window* win;
@@ -33,8 +33,8 @@ player_t p = {
 
 void drawMap2D() {
 	SDL_FRect rec;
-	for(int y = 0; y < 8; y++) {
-		for(int x = 0; x < 8; x++) {
+	for(int y = 0; y < MAP_HEIGHT; y++) {
+		for(int x = 0; x < MAP_WIDTH; x++) {
 			if (map[y][x]==1) {
 				rec = (SDL_FRect){x * HEIGHT/MAP_HEIGHT, y * HEIGHT/MAP_HEIGHT, HEIGHT/MAP_HEIGHT, HEIGHT/MAP_HEIGHT};
 				SDL_RenderFillRect(ren, &rec);
@@ -56,39 +56,46 @@ float castRay(float a) {
 		if (i > 400) break;
 	}
 	
-	float dist = sqrt(((x-p.x)*(x-p.x)) + ((y-p.y)*(y-p.y)));
+	float dist = sqrt(pow(x-p.x, 2) + pow(y-p.y, 2));
 	return dist;
 }
 
 void drawLine(int i, int h, int w) {
 	for (int j = 0; j < h; j++) {
 		float y = floor(300 - h / 2 + j);
+		SDL_SetRenderDrawColor(ren, h/2, h/2, h/2, 255);
 		SDL_FRect r = (SDL_FRect){i * w, y, w, 1};
 		SDL_RenderFillRect(ren, &r);
 	}
 }
-#define FOV 120
+#define FOV 1.5
 void rayCast() {
-	int rays = 200;
+	int rays = 100;
 	float sliceWidth = WIDTH / rays;
 	float step = FOV / rays;
 	
 	for (int i = 0; i < rays; i++) {
 		float angle = p.r - (FOV/2) + i * step;
 		float dist = castRay(angle);
-		float wh = 300/dist;
+		float wh = 1200/dist;
 		drawLine(i, wh, sliceWidth);
 	}
 }
 
 
 int main() {
-	if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) return -1;
+	if(!SDL_Init(SDL_INIT_VIDEO)) return -1;
 	SDL_CreateWindowAndRenderer("", WIDTH, HEIGHT, 0, &win, &ren);
-	
+
+	float frameTime = SDL_GetTicks();
+	float lastFrameTime = frameTime;
+	float dt = 0;
 	bool running = true;
 	SDL_Event e;
 	while (running) {
+		frameTime = SDL_GetTicks();
+		dt = frameTime - lastFrameTime;
+		lastFrameTime = frameTime;
 		if (SDL_PollEvent(&e)) {
 			if (e.type == SDL_EVENT_QUIT) {
 				return false;
@@ -102,18 +109,24 @@ int main() {
 		}
 		
 		if (keys[SDL_SCANCODE_W])
-			p.y -= 1;
+			p.y -= 0.02 * dt;
 		if (keys[SDL_SCANCODE_S])
-			p.y += 1;
+			p.y += 0.02 * dt;
 		if (keys[SDL_SCANCODE_A])
-			p.x -= 1;
+			p.x -= 0.02 * dt;
 		if (keys[SDL_SCANCODE_D])
-			p.x += 1;
+			p.x += 0.02 * dt;
 		
+		if (keys[SDL_SCANCODE_Q])
+			p.r -= 0.01 * dt;
+		if (keys[SDL_SCANCODE_E])
+			p.r += 0.01 * dt;
+		
+		if (keys[SDL_SCANCODE_M])
+			drawMap2D();
 		
 		SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 		SDL_RenderClear(ren);
-		SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
 		rayCast();
 		
 		SDL_RenderPresent(ren);
