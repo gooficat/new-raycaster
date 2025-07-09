@@ -135,18 +135,20 @@ int main() {
 		p.vx = 0;
 		p.vy = 0;
 		if (keys[SDL_SCANCODE_W])
-			p.vy -= PLAYER_SPEED;
-		if (keys[SDL_SCANCODE_S])
 			p.vy += PLAYER_SPEED;
+		if (keys[SDL_SCANCODE_S])
+			p.vy -= PLAYER_SPEED;
 		if (keys[SDL_SCANCODE_A])
-			p.vx -= PLAYER_SPEED;
-		if (keys[SDL_SCANCODE_D])
 			p.vx += PLAYER_SPEED;
+		if (keys[SDL_SCANCODE_D])
+			p.vx -= PLAYER_SPEED;
 		
 		if (keys[SDL_SCANCODE_Q])
 			p.r -= PLAYER_SPEED/2 * dt;
 		if (keys[SDL_SCANCODE_E])
 			p.r += PLAYER_SPEED/2 * dt;
+
+		SDL_FRect i = {-p.vx * 5000 + 100, -p.vy * 5000 + 100, 10, 10};
 
 		bool col = false;
 		
@@ -154,8 +156,8 @@ int main() {
 		
 		float ca = cos(p.r);
 		float sa = sin(p.r);
-		float nX = ca * p.vx + sa* p.vy;
-		p.vy = ca*p.vy + sa * p.vx;
+		float nX = ca * p.vx + sa * p.vy;
+		p.vy = -(ca*p.vy + sa * p.vx);
 		p.vx = nX;
 		
 		if (!col) {
@@ -169,7 +171,8 @@ int main() {
 		SDL_RenderFillRect(ren, &floorRect);
 		
 		rayCast();
-		
+		SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+		SDL_RenderFillRect(ren, &i);
 		if (keys[SDL_SCANCODE_M]) {
 			SDL_SetRenderDrawColor(ren, 100, 100, 100, 255);
 			drawMap2D();
