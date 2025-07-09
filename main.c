@@ -10,33 +10,45 @@ bool keys[512];
 SDL_Window* win;
 SDL_Renderer* ren;
 
-#define MAP_WIDTH 8
-#define MAP_HEIGHT 8
+#define MAP_WIDTH 16
+#define MAP_HEIGHT 16
 int map[MAP_HEIGHT][MAP_WIDTH] = {
-	{1,1,1,1,1,1,1,1},
-	{1,0,0,0,0,1,0,1},
-	{1,0,1,0,0,1,0,1},
-	{1,0,0,0,0,1,0,1},
-	{1,0,0,0,0,1,0,1},
-	{1,0,1,1,0,0,0,1},
-	{1,0,0,0,1,0,0,1},
-	{1,1,1,1,1,1,1,1}
+	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+	{1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1},
+	{1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1},
+	{1,0,0,0,1,1,1,1,0,0,0,0,0,1,0,1},
+	{1,0,0,0,1,0,0,0,0,0,0,1,0,1,0,1},
+	{1,0,0,0,1,1,1,0,0,0,0,1,0,1,0,1},
+	{1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1},
+	{1,0,0,1,0,0,0,0,0,0,0,0,0,1,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1},
+	{1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1},
+	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
 };
 
 typedef struct {
 	float x, y, r;
+	float vx, vy;
 } player_t;
 
 player_t p = {
-	4, 4, 0
+	8.0f, 8.0f, -(float)M_PI / 2.0f
 };
 
+SDL_FRect rec;
 void drawMap2D() {
-	SDL_FRect rec;
+	rec.w = HEIGHT/MAP_HEIGHT;
+	rec.h = HEIGHT/MAP_HEIGHT;
 	for(int y = 0; y < MAP_HEIGHT; y++) {
 		for(int x = 0; x < MAP_WIDTH; x++) {
 			if (map[y][x]==1) {
-				rec = (SDL_FRect){x * HEIGHT/MAP_HEIGHT, y * HEIGHT/MAP_HEIGHT, HEIGHT/MAP_HEIGHT, HEIGHT/MAP_HEIGHT};
+				rec.x = x * HEIGHT/MAP_HEIGHT;
+				rec.y = y * HEIGHT/MAP_HEIGHT;
 				SDL_RenderFillRect(ren, &rec);
 			}
 		}
@@ -50,42 +62,55 @@ float castRay(float a) {
 	
 	int i = 0;
 	while (map[(int)y][(int)x] == 0) {
-		x += dx * 0.1;
-		y += dy * 0.1;
+		x += dx * 0.01f;
+		y += dy * 0.01f;
 		i++;
-		if (i > 400) break;
+		if (i > 800) break;
 	}
 	
 	float dist = sqrt(pow(x-p.x, 2) + pow(y-p.y, 2));
 	return dist;
 }
-
+SDL_FRect r;
 void drawLine(int i, int h, int w) {
-	for (int j = 0; j < h; j++) {
-		float y = floor(250 - h / 2 + j);
-		SDL_SetRenderDrawColor(ren, 0, h/2, h/2, 255);
-		SDL_FRect r = (SDL_FRect){i * w, y, w, 1};
-		SDL_RenderFillRect(ren, &r);
-	}
+	SDL_SetRenderDrawColor(ren, 0, h/3, h/3, 255);
+	r = (SDL_FRect){i * w, HEIGHT/2 - h/2, w, h};
+	SDL_RenderFillRect(ren, &r);
 }
-#define FOV 1.5
+#define FOV 1.5f
 void rayCast() {
-	int rays = 100;
+	int rays = 200;
 	float sliceWidth = WIDTH / rays;
 	float step = FOV / rays;
 	
 	for (int i = 0; i < rays; i++) {
-		float angle = p.r - (FOV/2) + i * step;
+		float angle = (p.r-(float)M_PI / 2.0f) - (FOV/2) + i * step;
 		float dist = castRay(angle);
-		float wh = 200/dist;
+		float wh = 300/dist;
 		drawLine(i, wh, sliceWidth);
 	}
 }
 
+bool point_in_rect(float px, float py, int x, int y, int w, int h) {
+	if (px > x && px < x + w &&
+		py > y && py < y + h)
+		return true;
+	return false;
+}
 
+void normalize(float *x, float *y) {
+	float w = sqrt((*x) * (*x) + (*y) * (*y));
+	*x /= w;
+	*y /= w;
+}
+
+#define PLAYER_SPEED 0.004f
 int main() {
 	if(!SDL_Init(SDL_INIT_VIDEO)) return -1;
-	SDL_CreateWindowAndRenderer("", WIDTH, HEIGHT, 0, &win, &ren);
+	win = SDL_CreateWindow("", WIDTH, HEIGHT, 0);
+	ren = SDL_CreateRenderer(win, NULL);
+
+	SDL_FRect floorRect = {0, HEIGHT/2, WIDTH, HEIGHT/2};
 
 	float frameTime = SDL_GetTicks();
 	float lastFrameTime = frameTime;
@@ -107,30 +132,50 @@ int main() {
 				keys[e.key.scancode] = false;				
 			}
 		}
-		
+		p.vx = 0;
+		p.vy = 0;
 		if (keys[SDL_SCANCODE_W])
-			p.y -= 0.004 * dt;
+			p.vy -= PLAYER_SPEED;
 		if (keys[SDL_SCANCODE_S])
-			p.y += 0.004 * dt;
+			p.vy += PLAYER_SPEED;
 		if (keys[SDL_SCANCODE_A])
-			p.x -= 0.004 * dt;
+			p.vx -= PLAYER_SPEED;
 		if (keys[SDL_SCANCODE_D])
-			p.x += 0.004 * dt;
+			p.vx += PLAYER_SPEED;
 		
 		if (keys[SDL_SCANCODE_Q])
-			p.r -= 0.002 * dt;
+			p.r -= PLAYER_SPEED/2 * dt;
 		if (keys[SDL_SCANCODE_E])
-			p.r += 0.002 * dt;
+			p.r += PLAYER_SPEED/2 * dt;
+
+		bool col = false;
 		
-		if (keys[SDL_SCANCODE_M])
-			drawMap2D();
+		//normalize(&(p.vx), &(p.vy));
+		
+		float ca = cos(p.r);
+		float sa = sin(p.r);
+		float nX = ca * p.vx + sa* p.vy;
+		p.vy = ca*p.vy + sa * p.vx;
+		p.vx = nX;
+		
+		if (!col) {
+			p.x += p.vx * dt;
+			p.y += p.vy * dt;
+		}
 		
 		SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 		SDL_RenderClear(ren);
+		SDL_SetRenderDrawColor(ren, 0, 100, 0, 255);
+		SDL_RenderFillRect(ren, &floorRect);
+		
 		rayCast();
 		
+		if (keys[SDL_SCANCODE_M]) {
+			SDL_SetRenderDrawColor(ren, 100, 100, 100, 255);
+			drawMap2D();
+		}
+		
 		SDL_RenderPresent(ren);
-		SDL_Delay(16);
 	}
 	SDL_Quit();
 	return 0;
